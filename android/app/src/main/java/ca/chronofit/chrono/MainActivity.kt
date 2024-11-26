@@ -1,5 +1,6 @@
 package ca.chronofit.chrono
 
+import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ActivityNotFoundException
@@ -13,6 +14,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
@@ -51,6 +53,11 @@ class MainActivity : BaseActivity(), BottomNavigationView.OnNavigationItemSelect
         initRemoteConfig()
 
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        if(intent.getIntExtra("deeplinkResult", Activity.RESULT_CANCELED) == Activity.RESULT_OK){
+            Toast.makeText(applicationContext, "Circuit added and saved!", Toast.LENGTH_SHORT)
+                .show()
+        }
 
         if (savedInstanceState == null) {
             val fragTransaction = supportFragmentManager.beginTransaction()

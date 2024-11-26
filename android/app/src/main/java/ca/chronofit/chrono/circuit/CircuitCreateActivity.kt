@@ -3,8 +3,10 @@ package ca.chronofit.chrono.circuit
 import `in`.goodiebag.carouselpicker.CarouselPicker
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Intent
 import android.content.res.ColorStateList
 import android.content.res.TypedArray
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -14,6 +16,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.databinding.DataBindingUtil
 import androidx.viewpager.widget.ViewPager
+import ca.chronofit.chrono.MainActivity
 import ca.chronofit.chrono.R
 import ca.chronofit.chrono.databinding.ActivityCircuitCreateBinding
 import ca.chronofit.chrono.databinding.DialogSelectIconBinding
@@ -48,12 +51,7 @@ class CircuitCreateActivity : BaseActivity() {
         bind = DataBindingUtil.setContentView(this, R.layout.activity_circuit_create)
 
         iconNames = resources.obtainTypedArray(R.array.icon_files)
-
-        if (intent.getBooleanExtra("isEdit", false)) {
-            isEdit = true
-            editPosition = intent.getIntExtra("circuitPosition", -1)
-            loadCircuitInfo(editPosition)
-        }
+        handleIntent(intent)
 
         bind.circuitName.addTextChangedListener {
             if (bind.circuitName.length() >= MAX_CHARACTERS) {
@@ -69,14 +67,14 @@ class CircuitCreateActivity : BaseActivity() {
 
         // Button Listeners
         bind.discardButton.setOnClickListener {
-            setResult(Activity.RESULT_CANCELED)
-            finish()
+            navBack(Activity.RESULT_CANCELED)
         }
 
         bind.saveButton.setOnClickListener {
             if (validateInputs()) {
                 FirebaseAnalytics.getInstance(this).logEvent(Events.CREATE_COMPLETE, Bundle())
                 saveCircuit()
+                navBack(Activity.RESULT_OK)
             }
         }
 
@@ -137,6 +135,19 @@ class CircuitCreateActivity : BaseActivity() {
         }
     }
 
+    override fun onBackPressed() {
+        if (isTaskRoot) {
+            navBack(Activity.RESULT_CANCELED)
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
     private fun saveCircuit() {
         val circuit = CircuitObject()
         circuit.name = bind.circuitName.text.toString()
@@ -161,8 +172,6 @@ class CircuitCreateActivity : BaseActivity() {
             circuits!!.circuits!!.add(circuit)
         }
         PreferenceManager.put(circuits, Constants.CIRCUITS)
-        setResult(Activity.RESULT_OK)
-        finish()
     }
 
     private fun loadCircuitInfo(position: Int) {
@@ -295,6 +304,7 @@ class CircuitCreateActivity : BaseActivity() {
         builder.setView(dialogBinding.root)
         builder.show()
     }
+
 
     // Floor to a multiple of timeChangeVal
     private fun floorVal(valToFloor: Int): Int {
@@ -436,11 +446,44 @@ class CircuitCreateActivity : BaseActivity() {
         }
     }
 
+    private fun navBack(result: Int?) {
+        if (!isTaskRoot) {
+            setResult(result!!)
+            finish()
+        } else {
+            val navToMainActivity = Intent(this, MainActivity::class.java)
+            navToMainActivity.putExtra("deeplinkResult", result)
+            startActivity(navToMainActivity)
+            finish()
+        }
+    }
+
     private fun hideCursors() {
         bind.circuitName.isCursorVisible = false
         bind.setNum.isCursorVisible = false
         bind.setRest.isCursorVisible = false
         bind.setWork.isCursorVisible = false
+    }
+
+    private fun handleIntent(intent: Intent) {
+        val intentAction = intent.action
+        val intentData = intent.data
+        if (Intent.ACTION_VIEW == intentAction) {
+            val uri = Uri.parse(intentData.toString())
+            val name = uri!!.getQueryParameter("name")
+            val sets = uri.getQueryParameter("sets")
+            val work = uri.getQueryParameter("work")
+            val rest = uri.getQueryParameter("rest")
+
+            bind.circuitName.setText(name)
+            bind.setNum.setText(sets)
+            bind.setWork.setText(work)
+            bind.setRest.setText(rest)
+        } else if (intent.getBooleanExtra("isEdit", false)) {
+            isEdit = true
+            editPosition = intent.getIntExtra("circuitPosition", -1)
+            loadCircuitInfo(editPosition)
+        }
     }
 
     companion object {

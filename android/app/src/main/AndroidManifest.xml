@@ -32,7 +32,20 @@
         <activity
             android:name=".circuit.CircuitCreateActivity"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustPan" />
+            android:windowSoftInputMode="adjustPan">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Accepts URIs that begin with "http://www.chronofit.ca/shareCircuit” -->
+                <data
+                    android:scheme="http"
+                    android:host="www.chronofit.ca"
+                    android:pathPrefix="/shareCircuit/" />
+                <!-- note that the leading "/" is required for pathPrefix-->
+            </intent-filter>
+        </activity>
         <activity
             android:name=".circuit.CircuitTimerActivity"
             android:screenOrientation="portrait" />
